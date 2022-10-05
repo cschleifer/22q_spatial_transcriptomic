@@ -649,3 +649,5 @@ rsfa_bg_ahba <- merge(x=rsfa_bg, y=ahbaCombinedCABNP, by="label")
 cor_delta_pv <- cor.test(rsfa_bg_ahba$delta, rsfa_bg_ahba$PVALB, na.action="omit")
 cor_delta_st <- cor.test(rsfa_bg_ahba$delta, rsfa_bg_ahba$SST)
 cor_delta_st_over_pv <- cor.test(rsfa_bg_ahba$delta, rsfa_bg_ahba$SST_PVALB_RATIO)
+
+#TEST
