@@ -10,7 +10,7 @@ Analyses relating spatial patterns of gene expression from Allen Human Brain Atl
 
 2. Convert CAB-NP parcellation in CIFTI space to fsaverage5 surface and MNI volume space for input into abagen
     * [prep_cabnp_for_abagen.sh](prep_cabnp_for_abagen.sh) uses wb_command to convert CIFTI dlabel file 
-    * outputs are in [CAB_NP_CONVERTED](CAB_NP_CONVERTED) directory
+    * outputs are in [CAB_NP_CONVERTED](CAB-NP/CAB_NP_CONVERTED) directory
 
 
 3. Use abagen to parcellate AHBA data based on CAB-NP atlas
