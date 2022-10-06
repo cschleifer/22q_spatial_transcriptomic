@@ -21,4 +21,7 @@ Analyses relating spatial patterns of gene expression from Allen Human Brain Atl
 
 4. Test relationship between PVALB/SST expression gradient and fMRI group difference (22qDel - healthy controls)
     * [22q_spatial_transcriptomic.R](22q_spatial_transcriptomic.R) reads parcellated AHBA data into R, along with subject level MRI measures in csv format (see Step 1)
+    * requires wb_command for ciftiTools functions that read/plot MRI data. 
+      * download: https://www.humanconnectome.org/software/get-connectome-workbench
+      * script expects the workbench directory to be `/Applications/workbench/bin_macosx64` (either download to this location, or edit the path in the script)
  
