@@ -54,13 +54,13 @@ ahbaVolCABNP$label2 <- ahbaVolCABNP$label
 
 # load CAB-NP network parcellation
 # https://github.com/ColeLab/ColeAnticevicNetPartition
-ji_key <- read.table("/Users/charlie/Dropbox/PhD/bearden_lab/22q/analyses/striatum_thalamus_fc/ColeAnticevicNetPartition-master/CortexSubcortex_ColeAnticevic_NetPartition_wSubcorGSR_parcels_LR_LabelKey.txt",header=T)
+ji_key <- read.table(file.path(project,"CAB-NP/CortexSubcortex_ColeAnticevic_NetPartition_wSubcorGSR_parcels_LR_LabelKey.txt"),header=T)
 ji_net_keys <- ji_key[,c("NETWORKKEY","NETWORK")] %>% distinct %>% arrange(NETWORKKEY)
 # read cifti with subcortical structures labeled 
-xii_Ji_parcel <- read_cifti("/Users/charlie/Dropbox/PhD/bearden_lab/22q/analyses/striatum_thalamus_fc/ColeAnticevicNetPartition-master/data/CortexSubcortex_ColeAnticevic_NetPartition_wSubcorGSR_parcels_LR.dscalar.nii", brainstructures = "all")
-xii_Ji_network <- read_cifti("/Users/charlie/Dropbox/PhD/bearden_lab/22q/analyses/striatum_thalamus_fc/ColeAnticevicNetPartition-master/data/CortexSubcortex_ColeAnticevic_NetPartition_wSubcorGSR_netassignments_LR.dscalar.nii", brainstructures = "all")
+xii_Ji_parcel <- read_cifti(file.path(project,"CAB-NP/CortexSubcortex_ColeAnticevic_NetPartition_wSubcorGSR_parcels_LR.dscalar.nii"), brainstructures = "all")
+xii_Ji_network <- read_cifti(file.path(project,"CAB-NP/CortexSubcortex_ColeAnticevic_NetPartition_wSubcorGSR_netassignments_LR.dscalar.nii"), brainstructures = "all")
 # read only surface parcels
-xii_Ji_parcel_surf <- read_cifti("/Users/charlie/Dropbox/PhD/bearden_lab/22q/analyses/striatum_thalamus_fc/ColeAnticevicNetPartition-master/data/CortexSubcortex_ColeAnticevic_NetPartition_wSubcorGSR_parcels_LR.dscalar.nii", brainstructures = c("left", "right"))
+xii_Ji_parcel_surf <- read_cifti(file.path(project,"CAB-NP/CortexSubcortex_ColeAnticevic_NetPartition_wSubcorGSR_parcels_LR.dscalar.nii"), brainstructures = c("left", "right"))
 
 # function to take xifti atlas (with ROIs denoted by unique values) and return list of xifti matrix indices by brain structure for each ROI
 get_roi_atlas_inds <- function(xii){
@@ -78,7 +78,6 @@ get_roi_atlas_inds <- function(xii){
 # function to create xifti for plotting ROI values on a brain atlas
 # input atlas xifti and data frame with at least two cols corresponding to ROI IDs (roi_col) and output values (val_col) e.g. gene expression or functional connectivity
 # output modified atlas xifti with ROI IDs replaced with output values (for visualization)
-# TODO: expects df roi_col to be named "label", this shouldn't be hard coded
 atlas_xifti_new_vals <- function(xii, df, roi_col, val_col){
   # get list of xifti indices for each ROI
   inds <- get_roi_atlas_inds(xii)
@@ -89,11 +88,13 @@ atlas_xifti_new_vals <- function(xii, df, roi_col, val_col){
       xii_out$data[[struct]] <- as.matrix(rep(NA,times=nrow(xii_out$data[[struct]])))
     }
   }
+  # create new column named roilabel from roi_col
+  df$roilabel <- df[,roi_col]
   # for each roi in xii, set all relevant vertices to value from val_col based on roi_col
   for (roi in names(inds)){
     print(roi)
     # get value for roi
-    out_val <- as.numeric(filter(df[,c(roi_col,val_col)], label==gsub("r_","",roi))[val_col])
+    out_val <- as.numeric(filter(df[,c(roilabel,val_col)], roilabel==gsub("r_","",roi))[val_col])
     print(out_val)
     # loop through brain structures, if ROI has any indices in a structure, set those to the output value
     for (struct in names(inds[[roi]])){
