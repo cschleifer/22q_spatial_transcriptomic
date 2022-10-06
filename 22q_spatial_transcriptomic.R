@@ -13,7 +13,7 @@
 rm(list = ls(all.names = TRUE))
 
 # list packages to load
-packages <- c("magrittr", "dplyr", "tidyr", "ggplot2", "ciftiTools")
+packages <- c("here","magrittr", "dplyr", "tidyr", "ggplot2", "ciftiTools")
 
 # install packages if not yet installed
 # note: ciftiTools install fails if R is started without enough memory on cluster (try 16G)
