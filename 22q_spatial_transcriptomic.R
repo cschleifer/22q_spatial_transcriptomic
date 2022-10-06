@@ -13,7 +13,7 @@
 rm(list = ls(all.names = TRUE))
 
 # list packages to load
-packages <- c("here","magrittr", "dplyr", "tidyr", "ggplot2", "ciftiTools")
+packages <- c("conflicted","here","magrittr", "dplyr", "tidyr", "ggplot2", "ciftiTools")
 
 # install packages if not yet installed
 # note: ciftiTools install fails if R is started without enough memory on cluster (try 16G)
@@ -23,9 +23,13 @@ if (any(installed_packages == FALSE)) {install.packages(packages[!installed_pack
 # load packages
 invisible(lapply(packages, library, character.only = TRUE))
 
+# get path to project repo directory
+project <- here()
+print(paste("Project directory:", project))
+
 # set up connectome workbench path for ciftiTools
 # https://www.humanconnectome.org/software/get-connectome-workbench
-# on hoffman: /u/project/CCN/apps/hcp/current/workbench/bin_rh_linux64/
+# local wbpath (edit this path if workbench is installed in another location, e.g. on hoffman: /u/project/CCN/apps/hcp/current/workbench/bin_rh_linux64/)
 wbpath <- "/Applications/workbench/bin_macosx64/"
 ciftiTools.setOption("wb_path", wbpath)
 
@@ -42,10 +46,10 @@ rgl::rgl.open(); rgl::rgl.close()
 # load parcellated AHBA data
 # this csv is the output of abagen.get_expression_data() python function to extract AHBA expression from CAB-NP surface atlas
 # https://abagen.readthedocs.io/en/stable/user_guide/expression.html
-ahbaSurfCABNP <- read.csv("~/Dropbox/PhD/bearden_lab/AHBA/CAB-NP_surface_abagen_expression.csv", header=T, sep=",")
+ahbaSurfCABNP <- read.csv(file.path(project,"CAB-NP_surface_abagen_expression.csv"), header=T, sep=",")
 ahbaSurfCABNP$label2 <- ahbaSurfCABNP$label
 # load AHBA extracted from separated CAB-NP volume in MNI space (no cortical ROIs)
-ahbaVolCABNP <- read.csv("~/Dropbox/PhD/bearden_lab/AHBA/CAB-NP_subcort_abagen_expression.csv", header=T, sep=",")
+ahbaVolCABNP <- read.csv(file.path(project,"CAB-NP_subcort_abagen_expression.csv"), header=T, sep=",")
 ahbaVolCABNP$label2 <- ahbaVolCABNP$label
 
 # load CAB-NP network parcellation
