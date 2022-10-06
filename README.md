@@ -24,5 +24,5 @@ Analyses relating spatial patterns of gene expression from Allen Human Brain Atl
     * requires wb_command for ciftiTools functions that read/plot MRI data. 
       * download: https://www.humanconnectome.org/software/get-connectome-workbench
       * script expects the workbench directory to be `/Applications/workbench/bin_macosx64` (either download to this location, or edit the path in the script)
-      * to read fMRI results from the hoffman2 server, the script expects that the hoffman2 server (`hoffman2.idre.ucla.edu:/u/project/cbearden/data`) is mounted to your local machine (e.g. using [SSHFS](https://osxfuse.github.io/) at the path `~/Desktop/hoffman_mount`. Either mount at this path or adjust the `hoffman` variable in the script
+      * to read fMRI results from the hoffman2 server, the script expects that the hoffman2 server (`hoffman2.idre.ucla.edu:/u/project/cbearden/data`) is mounted to your local machine (e.g. using [SSHFS](https://osxfuse.github.io/)) at the path `~/Desktop/hoffman_mount`. Either mount at this path or adjust the `hoffman` variable in the script
  
