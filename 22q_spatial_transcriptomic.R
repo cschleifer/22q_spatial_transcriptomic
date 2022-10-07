@@ -13,7 +13,7 @@
 rm(list = ls(all.names = TRUE))
 
 # list packages to load
-packages <- c("conflicted","here","magrittr", "dplyr", "tidyr", "ggplot2", "ciftiTools")
+packages <- c("conflicted","here","magrittr", "dplyr", "tidyr", "ggplot2", "ciftiTools","tableone")
 
 # install packages if not yet installed
 # note: ciftiTools install fails if R is started without enough memory on cluster (try 16G)
@@ -23,6 +23,9 @@ if (any(installed_packages == FALSE)) {install.packages(packages[!installed_pack
 # load packages
 invisible(lapply(packages, library, character.only = TRUE))
 
+# use the filter function from dplyr, not stats
+conflict_prefer("filter", "dplyr")
+
 # get path to project repo directory
 project <- here()
 print(paste("Project directory:", project))
@@ -30,8 +33,13 @@ print(paste("Project directory:", project))
 # set up connectome workbench path for ciftiTools
 # https://www.humanconnectome.org/software/get-connectome-workbench
 # local wbpath (edit this path if workbench is installed in another location, e.g. on hoffman: /u/project/CCN/apps/hcp/current/workbench/bin_rh_linux64/)
+# TODO: edit if necessary
 wbpath <- "/Applications/workbench/bin_macosx64/"
 ciftiTools.setOption("wb_path", wbpath)
+
+# set local path to SSHFS mount point for hoffman:/u/project/cbearden/data
+# TODO: edit if necessary
+hoffman <- "~/Desktop/hoffman_mount/"
 
 # load rgl for ciftiTools visualization
 # may require XQartz v2.8.1 to be installed locally
@@ -94,7 +102,7 @@ atlas_xifti_new_vals <- function(xii, df, roi_col, val_col){
   for (roi in names(inds)){
     print(roi)
     # get value for roi
-    out_val <- as.numeric(filter(df[,c(roilabel,val_col)], roilabel==gsub("r_","",roi))[val_col])
+    out_val <- as.numeric(filter(df[,c("roilabel",val_col)], roilabel==gsub("r_","",roi))[val_col])
     print(out_val)
     # loop through brain structures, if ROI has any indices in a structure, set those to the output value
     for (struct in names(inds[[roi]])){
@@ -108,10 +116,9 @@ atlas_xifti_new_vals <- function(xii, df, roi_col, val_col){
   return(xii_out)
 }
 
-# get SST/PVALB and PVALB/SST
+# get SST/PVALB and PVALB/SST ratios
 ahbaSurfCABNP$SST_PVALB_RATIO <- ahbaSurfCABNP$SST/ahbaSurfCABNP$PVALB
 ahbaSurfCABNP$PVALB_SST_RATIO <- ahbaSurfCABNP$PVALB/ahbaSurfCABNP$SST
-
 
 # plot surface label values to check that atlas was read and written correctly (should match input atlas)
 #plot_label <- atlas_xifti_new_vals(xii=xii_Ji_parcel_surf, df=ahbaSurfCABNP, roi_col="label", val_col="label2")
@@ -120,49 +127,46 @@ ahbaSurfCABNP$PVALB_SST_RATIO <- ahbaSurfCABNP$PVALB/ahbaSurfCABNP$SST
 
 # plot PVALB expression
 plot_pv <- atlas_xifti_new_vals(xii=xii_Ji_parcel_surf, df=ahbaSurfCABNP, roi_col="label", val_col="PVALB")
-view_xifti_surface(plot_pv, hemisphere="left", title="PVALB", cex.title=1.3, colors="magma")
+#view_xifti_surface(plot_pv, hemisphere="left", title="PVALB", cex.title=1.3, colors="magma")
 
 # plot SST expression
 plot_sst <- atlas_xifti_new_vals(xii=xii_Ji_parcel_surf, df=ahbaSurfCABNP, roi_col="label", val_col="SST")
-view_xifti_surface(plot_sst, hemisphere="left", title="SST", cex.title=1.3, colors="magma")
+#view_xifti_surface(plot_sst, hemisphere="left", title="SST", cex.title=1.3, colors="magma")
 
 # plot SST/PVALB ratio
 plot_sst_pvalb_ratio <- atlas_xifti_new_vals(xii=xii_Ji_parcel_surf, df=ahbaSurfCABNP, roi_col="label", val_col="SST_PVALB_RATIO")
-view_xifti_surface(plot_sst_pvalb_ratio,  hemisphere="left", title="SST/PVALB", cex.title=1.3, colors="magma")
+#view_xifti_surface(plot_sst_pvalb_ratio,  hemisphere="left", title="SST/PVALB", cex.title=1.3, colors="magma")
 
 plot_pvalb_sst_ratio <- atlas_xifti_new_vals(xii=xii_Ji_parcel_surf, df=ahbaSurfCABNP, roi_col="label", val_col="PVALB_SST_RATIO")
-view_xifti_surface(plot_pvalb_sst_ratio,  hemisphere="left", title="PVALB/SST", cex.title=1.3, colors="magma")
+#view_xifti_surface(plot_pvalb_sst_ratio,  hemisphere="left", title="PVALB/SST", cex.title=1.3, colors="magma")
 
 # combine volume and surface df and plot together
 # list of genes that differ between dataframes
 #c(setdiff(names(ahbaVolCABNP), names(ahbaSurfCABNP)), setdiff(names(ahbaSurfCABNP), names(ahbaVolCABNP)))
-# combine shared columns between vol and surf dataframes
+# combine shared columns between vol and surf dataframes (columns may differ slightly if some genes were excluded in only surface/volume)
 common_cols <- intersect(names(ahbaVolCABNP), names(ahbaSurfCABNP))
 ahbaCombinedCABNP <- rbind(ahbaSurfCABNP[,common_cols], ahbaVolCABNP[,common_cols])
 # get SST/PVALB and PVALB/SST
+# TODO: when calculating ratio, need to avoid dividing by zero, and figure out why some regions have extremely high vals... 
 ahbaCombinedCABNP$SST_PVALB_RATIO <- ahbaCombinedCABNP$SST/ahbaCombinedCABNP$PVALB
 ahbaCombinedCABNP$PVALB_SST_RATIO <- ahbaCombinedCABNP$PVALB/ahbaCombinedCABNP$SST
 
-
 # plot volume label values
 plot_label_vol <- atlas_xifti_new_vals(xii=xii_Ji_parcel, df=ahbaCombinedCABNP, roi_col="label", val_col="label2")
-view_xifti(plot_label_vol, title="", cex.title=1.3, colors=rainbow(720))
+#view_xifti(plot_label_vol, title="", cex.title=1.3, colors=rainbow(720))
 #view_xifti_volume(xii_Ji_parcel, title="orig", cex.title=1.3, colors=rainbow(700))
 
 plot_pv_vol <- atlas_xifti_new_vals(xii=xii_Ji_parcel, df=ahbaCombinedCABNP, roi_col="label", val_col="PVALB")
-view_xifti(plot_pv_vol, title="PVALB", cex.title=1.3, colors="magma")
+#view_xifti(plot_pv_vol, title="PVALB", cex.title=1.3, colors="magma")
 
 
 ####################################################################################################################################################
 ### read sistat data and motion data to get subject lists for analysis 
 ####################################################################################################################################################
 
-#get motion data for all sessions by reading movement scrubbing files on hoffman
-# set hoffman path 
-hoffman <- "~/Desktop/hoffman_mount/"
-
-# get list of sessions
-#qunex_22q_sessions <- list.files(sessions_dir,pattern="Q_[0-9]")
+# get motion data for all sessions by reading movement scrubbing files on hoffman
+# TODO: confirm that hoffman path is set correctly for local machine
+# TODO: currently testing with only trio data, need to add prisma and other sites
 
 # function to get mapping between boldn and run name from session_hcp.txt
 get_boldn_names <- function(sesh,sessions_dir){
@@ -173,9 +177,7 @@ get_boldn_names <- function(sesh,sessions_dir){
   return(df_out)
 }
 
-#boldn_names <- lapply(qunex_22q_sessions,function(s) get_boldn_names(sesh=s,sessions_dir=sessions_dir)) %>% do.call(rbind,.) %>% as.data.frame
-
-# function to get %udvarsme from images/functional/movement/boldn.scrub
+# function to get %udvarsme from images/functional/movement/boldn.scrub (the percentage of frames scrubbed due to either exceeding FD movement threshold or DVARSME signal change threshold) 
 get_percent_udvarsme <- function(sesh,sessions_dir,bold_name_use){
   mov_dir <- file.path(sessions_dir,sesh,"images/functional/movement")
   sesh_bolds <- get_boldn_names(sesh=sesh,sessions_dir=sessions_dir) %>% as.data.frame %>% filter(bold_name == bold_name_use)
@@ -194,8 +196,7 @@ get_percent_udvarsme <- function(sesh,sessions_dir,bold_name_use){
   }
 }
 
-# get udvarsme stats for each site
-# firt get all sessions
+# first get all session names on hoffman
 all_22qtrio <- list.files(file.path(hoffman,"22q/qunex_studyfolder/sessions"),pattern="Q_[0-9]")
 #all_22qprisma <- list.files(file.path(hoffman,"22qPrisma/qunex_studyfolder/sessions"),pattern="Q_[0-9]")
 #all_suny <- list.files(file.path(hoffman,"Enigma/SUNY/qunex_studyfolder/sessions"),pattern="X[0-9]")
@@ -209,14 +210,15 @@ percent_udvarsme_22qtrio <- lapply(all_22qtrio,function(s) get_percent_udvarsme(
 #percent_udvarsme_suny <- lapply(all_suny,function(s) get_percent_udvarsme(sesh=s,sessions_dir=file.path(hoffman,"Enigma/SUNY/qunex_studyfolder/sessions"),bold_name_use="resting")) %>% do.call(rbind,.) %>% as.data.frame
 #percent_udvarsme_iop <- lapply(all_iop,function(s) get_percent_udvarsme(sesh=s,sessions_dir=file.path(hoffman,"Enigma/IoP/qunex_studyfolder/sessions"),bold_name_use="resting")) %>% do.call(rbind,.) %>% as.data.frame
 #percent_udvarsme_rome <- lapply(all_rome,function(s) get_percent_udvarsme(sesh=s,sessions_dir=file.path(hoffman,"Enigma/Rome/qunex_studyfolder/sessions"),bold_name_use="resting")) %>% do.call(rbind,.) %>% as.data.frame
-#percent_udvarsme_all <- rbind(percent_udvarsme_22qtrio,percent_udvarsme_22qprisma,percent_udvarsme_suny,percent_udvarsme_iop,percent_udvarsme_rome)
 
 # TODO: add other sites, for now just test trio
+#percent_udvarsme_all <- rbind(percent_udvarsme_22qtrio,percent_udvarsme_22qprisma,percent_udvarsme_suny,percent_udvarsme_iop,percent_udvarsme_rome)
 percent_udvarsme_all <- percent_udvarsme_22qtrio
 
+# ensure that values are read as numeric
 percent_udvarsme_all$percent_udvarsme <- as.numeric(percent_udvarsme_all$percent_udvarsme)
 percent_udvarsme_all$percent_use <- as.numeric(percent_udvarsme_all$percent_use)
-# get sessions with over 50% bad frames
+# get sessions to exclude with over 50% bad frames (this should be empty because all scans with too much movement have been moved to unused_sessions)
 percent_udvarsme_over50 <- filter(percent_udvarsme_all,percent_udvarsme_all$percent_udvarsme > 50)$sesh
 percent_udvarsme_under50 <- filter(percent_udvarsme_all,percent_udvarsme_all$percent_udvarsme < 50)$sesh
 
@@ -226,25 +228,25 @@ percent_udvarsme_under50 <- filter(percent_udvarsme_all,percent_udvarsme_all$per
 # the next several chunks deal with reading, cleaning and annotating the data exported from sistat, and then age matching
 # the hcs sample is younger than del due to a large amount of very young hcs subjects. plan is to match samples by using followup timepoints rather than baseline for some younger participants, and dropping several older del subjects, and younger hcs subjects (prioritizing dropping subjects with worse motion stats when possible)
 
-# set location of dropbox directory and name of csv directory
-csvdir <- "/Users/charlie/Dropbox/PhD/bearden_lab/22q/analyses/NRSA/csv_07252022/"
-# get list of files in directory
-files <- list.files(csvdir)
-fpaths <- lapply(files, function(file) paste(csvdir,file,sep="/"))
+# set location of directory with ucla sistat CSVs
+csvdir_ucla <- file.path(project,"demographics/ucla_sistat")
+# get list of files_ucla in directory
+files_ucla <- list.files(csvdir_ucla)
+fpaths <- lapply(files_ucla, function(file) paste(csvdir_ucla,file,sep="/"))
 # clean names
-fnames <- gsub(".csv","",files)
+fnames <- gsub(".csv","",files_ucla)
 fnames <- gsub("Re22Q_","",fnames)
 fnames <- gsub("Form_","",fnames)
 fnames <- gsub("Qry_","",fnames)
 # read all, set to na: "-9999", "-9998","." 
-input_all <- lapply(fpaths, read.csv, header=T, na.strings=c(".","-9999","-9998"), strip.white=T, sep=",")
-names(input_all) <- fnames
-df_all <- lapply(input_all, function(x) data.frame(x))
+input_all_ucla <- lapply(fpaths, read.csv, header=T, na.strings=c(".","-9999","-9998"), strip.white=T, sep=",")
+names(input_all_ucla) <- fnames
+df_all_ucla <- lapply(input_all_ucla, function(x) data.frame(x))
 
 # filter based on subject lists
-# TODO: add prisma
-#ucla_demo <- filter(df_all$demo_mri, df_all$demo_mri$MRI_S_ID %in% c(sessions_trio,sessions_prisma))
-ucla_demo <- filter(df_all$demo_mri, df_all$demo_mri$MRI_S_ID %in% all_22qtrio)
+# TODO: add prisma 
+#ucla_demo <- filter(df_all_ucla$demo_mri, df_all_ucla$demo_mri$MRI_S_ID %in% c(sessions_trio,sessions_prisma))
+ucla_demo <- filter(df_all_ucla$demo_mri, df_all_ucla$demo_mri$MRI_S_ID %in% all_22qtrio)
 
 # remove "FAMILY MEMBER" designation from subject identity
 ucla_demo$SUBJECT_IDENTITY <- ucla_demo$SUBJECT_IDENTITY %>% sub("FAMILY MEMBER","",.) %>% sub(",","",.) %>% trimws(which="both") %>% as.factor
@@ -288,7 +290,7 @@ ucla_demo_tp <- cbind(ucla_demo,timepoints[,3:7])
 ucla_demo_tp$visit_index %<>% as.factor
 
 # add medication info from summPsych
-ucla_summPsych <- df_all$summPsych
+ucla_summPsych <- df_all_ucla$summPsych
 ucla_summPsych$PSYTYPE[is.na(ucla_summPsych$PSYTYPE)] <- 5
 ucla_summPsych$medication <- factor(ucla_summPsych$PSYTYPE, levels=c(1,2,3,4,5), labels=c("antipsychotic","antidepressant_or_mood_stabilizer","stimulant","other","none"))
 ucla_summPsych$apd_tf <- ucla_summPsych$medication == "antipsychotic"
@@ -300,15 +302,15 @@ ucla_summPsych$psych_dx <- factor(ucla_summPsych$PSYDIAGNOS, levels=c(1,0,3), la
 ucla_demo_use <- merge(x=ucla_demo_tp, y=ucla_summPsych[,c("SUBJECTID","CONVERTEDVISITNUM","Med_Antipsychotic","psych_dx")], by=c("SUBJECTID","CONVERTEDVISITNUM"), all.x=T)
 
 # get IQ
-# WASI, WISC-IV, DKEFS and trail making all under df_all$DKEFS for trio data
+# WASI, WISC-IV, DKEFS and trail making all under df_all_ucla$DKEFS for trio data
 # IQSS -- full scale WASI
-ucla_neuro1 <- df_all$DKEFS[,c("SUBJECTID","CONVERTEDVISITNUM","VOCASS","MATRIXSS","IQSS")] %>% rename("WASI_verbal" = "VOCASS") %>% rename("WASI_matrix" = "MATRIXSS") %>% rename("IQ_full" = "IQSS")
-# renewal neuro (prisma) under df_all$neurocogTest
-ucla_neuro2 <- df_all$neurocogTest[,c("SUBJECTID","CONVERTEDVISITNUM","VOCA_TSCORE","MATRIX_TSCORE","IQ_SCORE")] %>% rename("WASI_verbal" = "VOCA_TSCORE") %>% rename("WASI_matrix" = "MATRIX_TSCORE") %>% rename("IQ_full" = "IQ_SCORE")
+ucla_neuro1 <- df_all_ucla$DKEFS[,c("SUBJECTID","CONVERTEDVISITNUM","VOCASS","MATRIXSS","IQSS")] %>% rename("WASI_verbal" = "VOCASS") %>% rename("WASI_matrix" = "MATRIXSS") %>% rename("IQ_full" = "IQSS")
+# renewal neuro (prisma) under df_all_ucla$neurocogTest
+ucla_neuro2 <- df_all_ucla$neurocogTest[,c("SUBJECTID","CONVERTEDVISITNUM","VOCA_TSCORE","MATRIX_TSCORE","IQ_SCORE")] %>% rename("WASI_verbal" = "VOCA_TSCORE") %>% rename("WASI_matrix" = "MATRIX_TSCORE") %>% rename("IQ_full" = "IQ_SCORE")
 # combine 22q orig and renewal scores before merging with demo table
 ucla_neuro <- rbind(ucla_neuro1, ucla_neuro2)
 # merge neuro with demo table
-ucla_demo_use <- merge(x=ucla_demo_use, y=ucla_neuro[,c("SUBJECTID","CONVERTEDVISITNUM","IQ_full")], by=c("SUBJECTID","CONVERTEDVISITNUM"), all.x=T) 
+ucla_demo_use <- merge(x=ucla_demo_use, y=ucla_neuro[,c("SUBJECTID","CONVERTEDVISITNUM","IQ_full","WASI_verbal","WASI_matrix")], by=c("SUBJECTID","CONVERTEDVISITNUM"), all.x=T) 
 # record IQ instrument
 ucla_demo_use$IQ_measure <- NA
 ucla_demo_use$IQ_measure[!is.na(ucla_demo_use$IQ_full)] <- "WASI_full_scale"
@@ -349,15 +351,14 @@ hcs_7yo_mov <- percent_udvarsme_all %>% filter(sesh %in% hcs_7yo$MRI_S_ID)
 hcs_7yo_mov_ordered <- hcs_7yo_mov[order(-hcs_7yo_mov$percent_udvarsme),]
 # currently removing the n=4 worst7 year olds
 hcs_7yo_remove <- hcs_7yo_mov_ordered[1:4,1]
-
 hcs_8yo <- ucla_demo_use_hcs_del_g7u30_xs %>% filter(AGE >= 8 & AGE < 9 & SUBJECT_IDENTITY == "CONTROL")
 hcs_8yo_mov <- percent_udvarsme_all %>% filter(sesh %in% hcs_8yo$MRI_S_ID)
 hcs_8yo_mov_ordered <- hcs_8yo_mov[order(-hcs_8yo_mov$percent_udvarsme),]
 # remove the n=1 worst 8 year olds
 hcs_8yo_remove <- hcs_8yo_mov_ordered[1,1]
-
 hcs_remove <- c(hcs_7yo_remove,hcs_8yo_remove)
 
+# filter out subjects in hcs_remove
 ucla_demo_use_hcs_del_xs <- ucla_demo_use_hcs_del_g7u30_xs %>% filter(!MRI_S_ID %in% hcs_remove)
 
 # final demo summary
@@ -368,11 +369,11 @@ print(demo_match_summary)
 #dir <- "/Users/charlie/Dropbox/PhD/bearden_lab/22q/analyses/striatum_thalamus_fc"
 
 # get variables from demo_mri
-df_demo_table_full <- ucla_demo_use_hcs_del_xs[,c("SUBJECTID","CONVERTEDVISITNUM","MRI_S_ID","SUBJECT_IDENTITY","AGE","SEX","EDUDAD","EDUMOM","EDUYEARS")]
+df_demo_table_full <- ucla_demo_use_hcs_del_xs[,c("SUBJECTID","CONVERTEDVISITNUM","MRI_S_ID","SUBJECT_IDENTITY","AGE","SEX","EDUDAD","EDUMOM","EDUYEARS","IQ_measure","IQ_full","WASI_verbal","WASI_matrix")]
 
 ### hand
 # get handedness item scores coded in sistat as 1=L, 2=R, 3=either, 0=no experience
-edin <- df_all$edin[,c("SUBJECTID","CONVERTEDVISITNUM","EDIN1","EDIN2","EDIN3","EDIN4","EDIN5","EDIN6","EDIN7","EDIN8","EDIN9","EDIN10")]
+edin <- df_all_ucla$edin[,c("SUBJECTID","CONVERTEDVISITNUM","EDIN1","EDIN2","EDIN3","EDIN4","EDIN5","EDIN6","EDIN7","EDIN8","EDIN9","EDIN10")]
 # function to get total edinburgh score and handedness
 # formula is 100*(R-L)/(R+L). score < -40 means left handed, score > 40 right handed
 # if more than 2 items NA then score is NA
@@ -410,19 +411,19 @@ df_demo_table_full <- merge(x=df_demo_table_full, y=edin_result[c("SUBJECTID","C
 
 ### psych dx
 # first get SCID columns with Dx (currently only using patient Dx not collateral)
-scid_dx_all <- df_all$SCID[,c("PATCODE1","PATCODE2","PATCODE3","PATCODE4","PATCODE5","PATCODE6","PATCODE7","PATCODE8")]
+scid_dx_all <- df_all_ucla$SCID[,c("PATCODE1","PATCODE2","PATCODE3","PATCODE4","PATCODE5","PATCODE6","PATCODE7","PATCODE8")]
 
 # get list of unique dx entries
 #dx_unique <- scid_dx_all %>% as.matrix %>% as.vector %>% sort %>% unique
 
 # create matching key between unique dx and dx groups for demographics table
 # first save dx_unique as csv
-#write.table(dx_unique, file=file.path(dir,"scid_unique_dx.csv"), row.names=F, col.names=F)
+#write.table(dx_unique, file=file.path(csvdir_ucla,"scid_unique_dx.csv"), row.names=F, col.names=F)
 # then manually edit csv so that column 2 contains the dx group for each specific dx. save edited csv as scid_unique_dx_matching.csv
 # dx group categories based on DSM-5 https://www.psychiatry.org/File%20Library/Psychiatrists/Practice/DSM/APA_DSM-5-Contents.pdf
 # Notes: leave second column blank for non-psych dx (eg Crohn's), code single-episode MDD in full remission as depressive_disorder_past, all other MDD as depressive_disorder
 # read matching table back in 
-dx_unique_matching <- read.csv(file="/Users/charlie/Dropbox/PhD/bearden_lab/22q/analyses/striatum_thalamus_fc/scid_unique_dx_matching.csv", header=F)
+dx_unique_matching <- read.csv(file.path(csvdir_ucla,"scid_unique_dx_matching.csv"), header=F)
 
 # function to take scid patient codes 1-8 for a subject and output binary y/n for each dx in dx_groups based on dx_unique_matching
 # should be applied to rows of the scid data frame
@@ -452,7 +453,7 @@ get_general_dx_scid <- function(scid_row,dx_matching){
 }
 
 # get general dx for each scid entry
-scid_general <- lapply(1:nrow(df_all$SCID), function(r) get_general_dx_scid(scid_row=df_all$SCID[r,], dx_matching=dx_unique_matching)) %>% do.call(rbind,.) %>% as.data.frame
+scid_general <- lapply(1:nrow(df_all_ucla$SCID), function(r) get_general_dx_scid(scid_row=df_all_ucla$SCID[r,], dx_matching=dx_unique_matching)) %>% do.call(rbind,.) %>% as.data.frame
 
 # merge scid general with demo table
 df_demo_table_full <- merge(x=df_demo_table_full, y=scid_general, by=c("SUBJECTID","CONVERTEDVISITNUM"), all.x=T)
@@ -469,7 +470,7 @@ dx_use <- dx_use[dx_use != "SCID_Depression_Related_Past"]
 dx_use <- dx_use[dx_use != "SCID_Learning_Disorder"]
 
 # add info from summPsych
-summpsych <- df_all$summPsych
+summpsych <- df_all_ucla$summPsych
 
 # meds as factors
 summpsych$PSYTYPE <- factor(summpsych$PSYTYPE, levels=c(1,2,3,4,5), labels=c("antipsychotic","antidepressant_or_mood_stabilizer","stimulant","other","none"))
@@ -494,11 +495,6 @@ df_demo_table_full <- cbind(df_demo_table_full,asd_col)
 
 # remove SCID_ASD column, redundant with summPsych
 dx_use <- dx_use[dx_use != "SCID_ASD"]
-
-# add IQ and merge with demo table
-# TO-DO figure out neuropsych test date matching
-#neurocog <- df_all$neurocogTest[,c("SUBJECTID","CONVERTEDVISITNUM","IQ_SCORE","VOCA_TSCORE","MATRIX_TSCORE")]
-#df_demo_table_full <- merge(x=df_demo_table_full, y=neurocog, by=c("SUBJECTID","CONVERTEDVISITNUM"), all.x=T)
 
 # add percent udvarsme
 df_demo_table_full <- merge(x=df_demo_table_full, y=percent_udvarsme_all[,c("sesh","percent_udvarsme")], by.x="MRI_S_ID", by.y="sesh", all.x=T) %>% rename("percent_BOLD_scrubbed" = "percent_udvarsme")
@@ -556,7 +552,7 @@ get_sips <- function(r,demo,sips){
 }
 
 # get sips 
-demo_table_sips <- lapply(1:nrow(df_demo_table_full), function(r) get_sips(r=r, demo=df_demo_table_full, sips=df_all$SIPS)) %>% do.call(rbind,.)
+demo_table_sips <- lapply(1:nrow(df_demo_table_full), function(r) get_sips(r=r, demo=df_demo_table_full, sips=df_all_ucla$SIPS)) %>% do.call(rbind,.)
 
 # merge sips with demo table
 df_demo_table_full <- merge(x=df_demo_table_full, y=demo_table_sips[,c("SUBJECTID","CONVERTEDVISITNUM","SIPS_total","SIPS_psspectrum_3")], by=c("SUBJECTID","CONVERTEDVISITNUM"), all.x=T) %>% rename("SIPS_prodromal" = "SIPS_psspectrum_3")
@@ -567,25 +563,27 @@ df_demo_table_full %<>% mutate_at(vars("SIPS_total"), ~as.numeric(.))
 
 
 # get IQ
-# WASI, WISC-IV, DKEFS and trail making all under df_all$DKEFS
+# WASI, WISC-IV, DKEFS and trail making all under df_all_ucla$DKEFS
 # VOCASS -- vocab standard score
 # MATRIXSS -- matrix standard score
 # IQSS -- full scale WASI
 # WISC4SS -- WM standard score (missing too many to be useful though)
-neuro <- df_all$DKEFS[,c("SUBJECTID","CONVERTEDVISITNUM","VOCASS","MATRIXSS","IQSS")] %>% rename("WASI_verbal" = "VOCASS") %>% rename("WASI_matrix" = "MATRIXSS") %>% rename("WASI_IQ_full" = "IQSS")
+#neuro <- df_all_ucla$DKEFS[,c("SUBJECTID","CONVERTEDVISITNUM","VOCASS","MATRIXSS","IQSS")] %>% rename("WASI_verbal" = "VOCASS") %>% rename("WASI_matrix" = "MATRIXSS") %>% rename("WASI_IQ_full" = "IQSS")
 
 # merge neuro with demo table
-df_demo_table_full <- merge(x=df_demo_table_full, y=neuro, by=c("SUBJECTID","CONVERTEDVISITNUM"), all.x=T) 
+#df_demo_table_full <- merge(x=df_demo_table_full, y=neuro, by=c("SUBJECTID","CONVERTEDVISITNUM"), all.x=T) 
 
+## make final demographics table to report
+# drop unused factor levels
+df_demo_table_full %<>% droplevels
 # vector of variables for demo table
-vars_use <- c("AGE","SEX","EDUDAD","EDUMOM","EDUYEARS","hand", "percent_BOLD_scrubbed", "WASI_IQ_full","WASI_verbal","WASI_matrix", "SIPS_total","SIPS_prodromal", dx_use, "summPsych_ASD", "psych_meds")
-
-# make table
+vars_use <- c("AGE","SEX","EDUDAD","EDUMOM","EDUYEARS","hand", "percent_BOLD_scrubbed", "IQ_full","WASI_verbal","WASI_matrix", "SIPS_total","SIPS_prodromal", dx_use, "summPsych_ASD", "psych_meds")
+# create table
 demo_match_final <- CreateTableOne(data=df_demo_table_full,vars=vars_use,strata="SUBJECT_IDENTITY",addOverall=F,includeNA=F)
-
+print(demo_match_final)
 # export tableone
 #export_demo_table <- print(demo_match_final, quote=F, noSpaces=F, printToggle=T)
-#write.csv(export_demo_table, file=file.path(dir,"table1.csv"))
+#write.csv(export_demo_table, file=file.path(project,"demographics_table1.csv"))
 
 ####################################################################################################################################################
 ### compute RSFA difference z score in 22qDel vs HCS sample and correlate with PVALB/SST gradient
@@ -636,23 +634,30 @@ rsfa_hcs_means <- rsfa_means(rsfa_hcs_all) %>% as.data.frame
 rsfa_diff <- rsfa_22q_means$mean - rsfa_hcs_means$mean
 rsfa_delta <- rsfa_diff/rsfa_hcs_means$sd
 
-# brain plots
+# create dataframe for input to atlas_xifti_new_vals() with label column (roi_col) and RSFA outputs (val_col)
 rsfa_bg <- cbind(1:length(rsfa_diff),rsfa_diff,rsfa_delta) %>% as.data.frame
 colnames(rsfa_bg) <- c("label","diff","delta")
 
+# brain plots
 plot_rsfa_diff <- atlas_xifti_new_vals(xii=xii_Ji_parcel, df=rsfa_bg, roi_col="label", val_col="diff")
 view_xifti_surface(plot_rsfa_diff, title="RSFA diff (22qDel - HCS)", cex.title=1.3, colors="magma")
 
 plot_rsfa_delta <- atlas_xifti_new_vals(xii=xii_Ji_parcel, df=rsfa_bg, roi_col="label", val_col="delta")
 view_xifti_surface(plot_rsfa_delta, title="RSFA delta (22qDel - HCS)", cex.title=1.3, colors="magma")
+view_xifti_surface(plot_rsfa_delta, title="RSFA delta (22qDel - HCS)", cex.title=1.3, colors="magma", hemisphere = "left")
+
 
 # merge fmri data with ahba by parcel
 rsfa_bg_ahba <- merge(x=rsfa_bg, y=ahbaCombinedCABNP, by="label")
 
+# correlate delta with PVALB, SST, and SST/PVALB -- wole brain
+cor_wb_delta_pv <- cor.test(rsfa_bg_ahba$delta, rsfa_bg_ahba$PVALB, na.action="omit")
+cor_wb_delta_st <- cor.test(rsfa_bg_ahba$delta, rsfa_bg_ahba$SST, na.action="omit")
+cor_wb_delta_st_over_pv <- cor.test(rsfa_bg_ahba$delta, rsfa_bg_ahba$SST_PVALB_RATIO, na.action="omit")
 
-# correlate delta with PVALB, SST, and SST/PVALB
-cor_delta_pv <- cor.test(rsfa_bg_ahba$delta, rsfa_bg_ahba$PVALB, na.action="omit")
-cor_delta_st <- cor.test(rsfa_bg_ahba$delta, rsfa_bg_ahba$SST)
-cor_delta_st_over_pv <- cor.test(rsfa_bg_ahba$delta, rsfa_bg_ahba$SST_PVALB_RATIO)
+# correlate delta with PVALB, SST, and SST/PVALB -- only LH cortex (RH AHBA has more missing parcels)
+rsfa_bg_lh_ahba <- filter(rsfa_bg_ahba, label <= 180)
+cor_lh_delta_pv <- cor.test(rsfa_bg_lh_ahba$delta, rsfa_bg_lh_ahba$PVALB, na.action="omit")
+cor_lh_delta_st <- cor.test(rsfa_bg_lh_ahba$delta, rsfa_bg_lh_ahba$SST, na.action="omit")
+cor_lh_delta_st_over_pv <- cor.test(rsfa_bg_lh_ahba$delta, rsfa_bg_lh_ahba$SST_PVALB_RATIO, na.action="omit")
 
-#TEST
