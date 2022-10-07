@@ -10,7 +10,7 @@
       </MD>
       <MD>
          <Name><![CDATA[ParentProvenance]]></Name>
-         <Value><![CDATA[/Users/charlie/Dropbox/PhD/bearden_lab/22q/analyses/striatum_thalamus_fc/ColeAnticevicNetPartition-master/CortexSubcortex_ColeAnticevic_NetPartition_wSubcorGSR_parcels_LR.dlabel.nii:
+         <Value><![CDATA[/Users/charlie/Dropbox/github/22q_spatial_transcriptomic/CAB-NP/CortexSubcortex_ColeAnticevic_NetPartition_wSubcorGSR_parcels_LR.dlabel.nii:
 /Applications/workbench/bin_macosx64/../macosx64_apps/wb_command.app/Contents/MacOS/wb_command -cifti-create-dense-from-template /Users/jj464/Dropbox/Connectome/NetworkAssignment/FinalSolutions/CortexSubcortex_wGSR_ColeAnticevic_NetPartition_parcels_v1_LR.dlabel.nii CortexSubcortex_HCPPhase2_ColeAnticevic_NetPartition_wSubcorGSR_parcels_LR.dlabel.nii -label CORTEX_LEFT Cortex_HCPPhase2_ColeAnticevic_NetPartition_parcels_L.label.gii -label CORTEX_RIGHT Cortex_HCPPhase2_ColeAnticevic_NetPartition_parcels_R.label.gii -volume-all subcortex_atlas_wGSR_parcels.nii
 
 ]]></Value>
@@ -33,11 +33,11 @@ Operating System: Apple OSX
       </MD>
       <MD>
          <Name><![CDATA[Provenance]]></Name>
-         <Value><![CDATA[/Applications/workbench/bin_macosx64/../macosx64_apps/wb_command.app/Contents/MacOS/wb_command -cifti-separate /Users/charlie/Dropbox/PhD/bearden_lab/22q/analyses/striatum_thalamus_fc/ColeAnticevicNetPartition-master/CortexSubcortex_ColeAnticevic_NetPartition_wSubcorGSR_parcels_LR.dlabel.nii COLUMN -label CORTEX_LEFT /Users/charlie/Dropbox/PhD/bearden_lab/AHBA/CAB_NP_converted/CAB_NP_surface_orig_L.label.gii -label CORTEX_RIGHT /Users/charlie/Dropbox/PhD/bearden_lab/AHBA/CAB_NP_converted/CAB_NP_surface_orig_R.label.gii]]></Value>
+         <Value><![CDATA[/Applications/workbench/bin_macosx64/../macosx64_apps/wb_command.app/Contents/MacOS/wb_command -cifti-separate /Users/charlie/Dropbox/github/22q_spatial_transcriptomic/CAB-NP/CortexSubcortex_ColeAnticevic_NetPartition_wSubcorGSR_parcels_LR.dlabel.nii COLUMN -label CORTEX_LEFT /Users/charlie/Dropbox/github/22q_spatial_transcriptomic/CAB-NP/CAB_NP_converted//CAB_NP_surface_orig_L.label.gii -label CORTEX_RIGHT /Users/charlie/Dropbox/github/22q_spatial_transcriptomic/CAB-NP/CAB_NP_converted//CAB_NP_surface_orig_R.label.gii]]></Value>
       </MD>
       <MD>
          <Name><![CDATA[WorkingDirectory]]></Name>
-         <Value><![CDATA[/Users/charlie/Dropbox/PhD/bearden_lab/AHBA]]></Value>
+         <Value><![CDATA[/Users/charlie/Dropbox/github/22q_spatial_transcriptomic]]></Value>
       </MD>
    </MetaData>
    <LabelTable>

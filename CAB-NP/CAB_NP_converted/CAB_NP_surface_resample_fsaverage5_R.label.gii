@@ -10,10 +10,10 @@
       </MD>
       <MD>
          <Name><![CDATA[ParentProvenance]]></Name>
-         <Value><![CDATA[/Users/charlie/Dropbox/PhD/bearden_lab/AHBA/CAB_NP_converted/CAB_NP_surface_orig_R.label.gii:
-/Applications/workbench/bin_macosx64/../macosx64_apps/wb_command.app/Contents/MacOS/wb_command -cifti-separate /Users/charlie/Dropbox/PhD/bearden_lab/22q/analyses/striatum_thalamus_fc/ColeAnticevicNetPartition-master/CortexSubcortex_ColeAnticevic_NetPartition_wSubcorGSR_parcels_LR.dlabel.nii COLUMN -label CORTEX_LEFT /Users/charlie/Dropbox/PhD/bearden_lab/AHBA/CAB_NP_converted/CAB_NP_surface_orig_L.label.gii -label CORTEX_RIGHT /Users/charlie/Dropbox/PhD/bearden_lab/AHBA/CAB_NP_converted/CAB_NP_surface_orig_R.label.gii
+         <Value><![CDATA[/Users/charlie/Dropbox/github/22q_spatial_transcriptomic/CAB-NP/CAB_NP_converted//CAB_NP_surface_orig_R.label.gii:
+/Applications/workbench/bin_macosx64/../macosx64_apps/wb_command.app/Contents/MacOS/wb_command -cifti-separate /Users/charlie/Dropbox/github/22q_spatial_transcriptomic/CAB-NP/CortexSubcortex_ColeAnticevic_NetPartition_wSubcorGSR_parcels_LR.dlabel.nii COLUMN -label CORTEX_LEFT /Users/charlie/Dropbox/github/22q_spatial_transcriptomic/CAB-NP/CAB_NP_converted//CAB_NP_surface_orig_L.label.gii -label CORTEX_RIGHT /Users/charlie/Dropbox/github/22q_spatial_transcriptomic/CAB-NP/CAB_NP_converted//CAB_NP_surface_orig_R.label.gii
 
-/Users/charlie/Dropbox/PhD/bearden_lab/22q/HCPpipelines-4.1.3/global/templates/standard_mesh_atlases/resample_fsaverage//fs_LR-deformed_to-fsaverage.R.sphere.32k_fs_LR.surf.gii:
+/Users/charlie/Dropbox/github/22q_spatial_transcriptomic/CAB-NP/HCPpipelines-4.1.3_templates_resample_fsaverage/fs_LR-deformed_to-fsaverage.R.sphere.32k_fs_LR.surf.gii:
 wb_command -surface-sphere-project-unproject /media/myelin/tim/pipelinedevel/Pipelines/global/templates/standard_mesh_atlases/R.sphere.32k_fs_LR.surf.gii /media/myelin/tim/vertareascratch/data/base.sphere.surf.gii /media/myelin/tim/vertareascratch/data/MSMAll-to-fsaverage.R.sphere.surf.gii /media/myelin/tim/pipelinedevel/Pipelines/global/templates/standard_mesh_atlases/fs_LR-deformed_to-fsaverage.R.sphere.32k_fs_LR.surf.gii
 
 ]]></Value>
@@ -36,11 +36,11 @@ Operating System: Apple OSX
       </MD>
       <MD>
          <Name><![CDATA[Provenance]]></Name>
-         <Value><![CDATA[/Applications/workbench/bin_macosx64/../macosx64_apps/wb_command.app/Contents/MacOS/wb_command -label-resample /Users/charlie/Dropbox/PhD/bearden_lab/AHBA/CAB_NP_converted/CAB_NP_surface_orig_R.label.gii /Users/charlie/Dropbox/PhD/bearden_lab/22q/HCPpipelines-4.1.3/global/templates/standard_mesh_atlases/resample_fsaverage//fs_LR-deformed_to-fsaverage.R.sphere.32k_fs_LR.surf.gii /Users/charlie/Dropbox/PhD/bearden_lab/22q/HCPpipelines-4.1.3/global/templates/standard_mesh_atlases/resample_fsaverage//fsaverage5_std_sphere.R.10k_fsavg_R.surf.gii ADAP_BARY_AREA /Users/charlie/Dropbox/PhD/bearden_lab/AHBA/CAB_NP_converted/CAB_NP_surface_resample_fsaverage5_R.label.gii -area-metrics /Users/charlie/Dropbox/PhD/bearden_lab/22q/HCPpipelines-4.1.3/global/templates/standard_mesh_atlases/resample_fsaverage//fs_LR.R.midthickness_va_avg.32k_fs_LR.shape.gii /Users/charlie/Dropbox/PhD/bearden_lab/22q/HCPpipelines-4.1.3/global/templates/standard_mesh_atlases/resample_fsaverage//fsaverage5.R.midthickness_va_avg.10k_fsavg_R.shape.gii]]></Value>
+         <Value><![CDATA[/Applications/workbench/bin_macosx64/../macosx64_apps/wb_command.app/Contents/MacOS/wb_command -label-resample /Users/charlie/Dropbox/github/22q_spatial_transcriptomic/CAB-NP/CAB_NP_converted//CAB_NP_surface_orig_R.label.gii /Users/charlie/Dropbox/github/22q_spatial_transcriptomic/CAB-NP/HCPpipelines-4.1.3_templates_resample_fsaverage/fs_LR-deformed_to-fsaverage.R.sphere.32k_fs_LR.surf.gii /Users/charlie/Dropbox/github/22q_spatial_transcriptomic/CAB-NP/HCPpipelines-4.1.3_templates_resample_fsaverage/fsaverage5_std_sphere.R.10k_fsavg_R.surf.gii ADAP_BARY_AREA /Users/charlie/Dropbox/github/22q_spatial_transcriptomic/CAB-NP/CAB_NP_converted//CAB_NP_surface_resample_fsaverage5_R.label.gii -area-metrics /Users/charlie/Dropbox/github/22q_spatial_transcriptomic/CAB-NP/HCPpipelines-4.1.3_templates_resample_fsaverage/fs_LR.R.midthickness_va_avg.32k_fs_LR.shape.gii /Users/charlie/Dropbox/github/22q_spatial_transcriptomic/CAB-NP/HCPpipelines-4.1.3_templates_resample_fsaverage/fsaverage5.R.midthickness_va_avg.10k_fsavg_R.shape.gii]]></Value>
       </MD>
       <MD>
          <Name><![CDATA[WorkingDirectory]]></Name>
-         <Value><![CDATA[/Users/charlie/Dropbox/PhD/bearden_lab/AHBA]]></Value>
+         <Value><![CDATA[/Users/charlie/Dropbox/github/22q_spatial_transcriptomic]]></Value>
       </MD>
    </MetaData>
    <LabelTable>
