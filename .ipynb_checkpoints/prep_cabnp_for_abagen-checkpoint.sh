@@ -59,14 +59,14 @@ done
 
 
 # get volume parcels nii from CIFTI
-# same cifti_in as surface step
-#cifti_in="/Users/charlie/Dropbox/PhD/bearden_lab/22q/analyses/striatum_thalamus_fc/ColeAnticevicNetPartition-master/data/CortexSubcortex_ColeAnticevic_NetPartition_wSubcorGSR_parcels_LR.dscalar.nii"
-label_in=${project}/CAB-NP/CortexSubcortex_ColeAnticevic_NetPartition_wSubcorGSR_parcels_LR.dlabel.nii
+# use dscalar input rather than dlabel, because dscalar subcort roi values correspond to directly to the parcel IDs but the dlabel ones don't
+cifti_in=${project}/CAB-NP/CortexSubcortex_ColeAnticevic_NetPartition_wSubcorGSR_parcels_LR.dscalar.nii
+#label_in=${project}/CAB-NP/CortexSubcortex_ColeAnticevic_NetPartition_wSubcorGSR_parcels_LR.dlabel.nii
 # volume out name
 volume_out=${out}/CAB_NP_vol_separated.nii
-#wb_command -cifti-separate $cifti_in COLUMN -volume-all $volume_out
 echo "...Separating volume"
-wb_command -cifti-separate $label_in COLUMN -volume-all $volume_out
+wb_command -cifti-separate $cifti_in COLUMN -volume-all $volume_out
+#wb_command -cifti-separate $label_in COLUMN -volume-all $volume_out
 
 ##############################################################################################################################
 # Unused code (from previous attempt to use dscalar instead of dlabel inputs, lead to blurring of fsaverage borders)

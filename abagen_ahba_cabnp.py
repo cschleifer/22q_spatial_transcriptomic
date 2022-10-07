@@ -3,10 +3,10 @@
 
 # In[]:
 # import abagen and other libraries
+import os
 import abagen
 from abagen import images
 from abagen import reporting
-import re
 import pandas as pd
 pd.set_option('display.max_rows', 1000)
 pd.set_option('display.max_columns', 500)
@@ -14,16 +14,16 @@ pd.set_option('display.max_columns', 500)
 
 # In[]:
 # Download AHBA data
+# TODO: uncomment if you need to re-download the data
 #files = abagen.fetch_microarray(donors='all', verbose=1)
 
-
 # In[]:
-# load DK atlas included with abagen
-atlasdk = abagen.fetch_desikan_killiany()
-print(atlasdk['info'])
-pd.read_csv(atlasdk['info'])
-
-
+# get path to parent directory (github repo)
+# this works if full script is run, otherwise, need to set project manually to github repo path
+# project='/Users/charlie/Dropbox/github/22q_spatial_transcriptomic/'
+project=os.path.dirname(__file__)+'/'    
+    
+    
 # In[]:
 # try importing CAB-NP surface in fsLR 32k resolution
 # abagen normally expects fsaverage5 but can handle other meshes if provided with the surface file
@@ -38,7 +38,8 @@ pd.read_csv(atlasdk['info'])
 
 # In[]:
 # read CAB-NP parcellation key
-ji_parc_key = pd.read_table('/Users/charlie/Dropbox/PhD/bearden_lab/22q/analyses/striatum_thalamus_fc/ColeAnticevicNetPartition-master/CortexSubcortex_ColeAnticevic_NetPartition_wSubcorGSR_parcels_LR_LabelKey.txt', delimiter="\t")
+#ji_parc_key = pd.read_table('/Users/charlie/Dropbox/PhD/bearden_lab/22q/analyses/striatum_thalamus_fc/ColeAnticevicNetPartition-master/CortexSubcortex_ColeAnticevic_NetPartition_wSubcorGSR_parcels_LR_LabelKey.txt', delimiter="\t")
+ji_parc_key = pd.read_table(project+'/CAB-NP/CortexSubcortex_ColeAnticevic_NetPartition_wSubcorGSR_parcels_LR_LabelKey.txt', delimiter="\t")
 
 
 # In[]:
@@ -68,13 +69,13 @@ info_ji_parc_subcort=info_ji_parc[info_ji_parc.structure != 'cortex']
 # abagen normally expects fsaverage5 but can handle other meshes if provided with the surface file
 # see "non-standard parcellations" https://abagen.readthedocs.io/en/stable/user_guide/parcellations.html
 # for atlas, provide paths to left and right surface GIFTIS (created by prep_cabnp_for_abagen_bash.ipynb)
-atlasCABNPsurf = ('/Users/charlie/Dropbox/PhD/bearden_lab/AHBA/CAB_NP_converted/CAB_NP_surface_resample_fsaverage5_L.label.gii','/Users/charlie/Dropbox/PhD/bearden_lab/AHBA/CAB_NP_converted/CAB_NP_surface_resample_fsaverage5_r.label.gii')
+atlasCABNPsurf = (project+'/CAB-NP/CAB_NP_converted/CAB_NP_surface_resample_fsaverage5_L.label.gii',project+'/CAB-NP/CAB_NP_converted/CAB_NP_surface_resample_fsaverage5_r.label.gii')
 
 # surface fsaverage5
 atlasCABNPsurfTree = images.check_atlas(atlas=atlasCABNPsurf,atlas_info=info_ji_parc_cortex, space='fsaverage5')
 
 # volume (output of -cifti-separate)
-atlasCABNPvol='/Users/charlie/Dropbox/PhD/bearden_lab/AHBA/CAB_NP_converted/CAB_NP_vol_separated.nii'
+atlasCABNPvol=project+'/CAB-NP/CAB_NP_converted/CAB_NP_vol_separated.nii'
 atlasCABNPvolTree = images.check_atlas(atlas=atlasCABNPvol,atlas_info=info_ji_parc_subcort)
 
 
@@ -84,19 +85,24 @@ atlasCABNPvolTree = images.check_atlas(atlas=atlasCABNPvol,atlas_info=info_ji_pa
 # since vol and surf are computed separately here, normalizing by brain structure is better 
 # https://abagen.readthedocs.io/en/stable/user_guide/normalization.html
 ahbaSurfCABNP = abagen.get_expression_data(atlasCABNPsurfTree, norm_structures=True, verbose=1)
-ahbaSurfCABNP.to_csv('/Users/charlie/Dropbox/PhD/bearden_lab/AHBA/CAB-NP_surface_abagen_expression.csv')
+ahbaSurfCABNP.to_csv(project+'/CAB-NP_surface_abagen_expression.csv')
 #return_counts
 #return_donors
 #return_report
+# generate and save methods report
 surfReport = reporting.Report(atlasCABNPsurfTree, norm_structures=True)
 surfReport_out = surfReport.gen_report()
-
+with open(project+'abagen_surf_methods_report.txt', 'w') as text_file:
+    text_file.write(surfReport_out)
+    
 # volume only
 ahbaVolCABNP = abagen.get_expression_data(atlasCABNPvolTree, norm_structures=True, verbose=1)
-ahbaVolCABNP.to_csv('/Users/charlie/Dropbox/PhD/bearden_lab/AHBA/CAB-NP_subcort_abagen_expression.csv')
-
+ahbaVolCABNP.to_csv(project+'/CAB-NP_subcort_abagen_expression.csv')
+# generate and save methods report
 volReport = reporting.Report(atlasCABNPvolTree, norm_structures=True)
 volReport_out = volReport.gen_report()
+with open(project+'/abagen_vol_methods_report.txt', 'w') as text_file:
+    text_file.write(volReport_out)
 
 
 
