@@ -1,5 +1,5 @@
 # 22q_spatial_transcriptomic
-Analyses relating spatial patterns of gene expression from Allen Human Brain Atlas (AHBA) to fMRI markers of 22q11.2 deletion syndrome (22qDel)
+Analyses relating spatial patterns of gene expression from Allen Human Brain Atlas (AHBA) to fMRI markers of 22q11.2 Deletion Syndrome (22qDel)
 
 ## Overview
 
