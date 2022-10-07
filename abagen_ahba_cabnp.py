@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[]:
 # import abagen and other libraries
 import os
 import abagen
@@ -11,20 +10,15 @@ import pandas as pd
 pd.set_option('display.max_rows', 1000)
 pd.set_option('display.max_columns', 500)
 
-
-# In[]:
 # Download AHBA data
 # TODO: uncomment if you need to re-download the data
 #files = abagen.fetch_microarray(donors='all', verbose=1)
 
-# In[]:
 # get path to parent directory (github repo)
 # this works if full script is run, otherwise, need to set project manually to github repo path
 # project='/Users/charlie/Dropbox/github/22q_spatial_transcriptomic/'
 project=os.path.dirname(__file__)+'/'    
     
-    
-# In[]:
 # try importing CAB-NP surface in fsLR 32k resolution
 # abagen normally expects fsaverage5 but can handle other meshes if provided with the surface file
 # see "non-standard parcellations" https://abagen.readthedocs.io/en/stable/user_guide/parcellations.html
@@ -36,13 +30,9 @@ project=os.path.dirname(__file__)+'/'
 #atlasCABNPsurfTree = images.check_atlas(atlas=atlasCABNPsurf, geometry=surfCABNP, space='fslr')
 # TODO: figure out why this didn't work
 
-# In[]:
 # read CAB-NP parcellation key
-#ji_parc_key = pd.read_table('/Users/charlie/Dropbox/PhD/bearden_lab/22q/analyses/striatum_thalamus_fc/ColeAnticevicNetPartition-master/CortexSubcortex_ColeAnticevic_NetPartition_wSubcorGSR_parcels_LR_LabelKey.txt', delimiter="\t")
 ji_parc_key = pd.read_table(project+'/CAB-NP/CortexSubcortex_ColeAnticevic_NetPartition_wSubcorGSR_parcels_LR_LabelKey.txt', delimiter="\t")
 
-
-# In[]:
 # edit key to use as atlas info
 ji_key_subset = ji_parc_key[['INDEX','HEMISPHERE','LABEL','NETWORK','NETWORKKEY','GLASSERLABELNAME']]
 # rename columns that abagen expects
@@ -63,8 +53,6 @@ info_ji_parc_cortex=info_ji_parc[info_ji_parc.structure == 'cortex']
 # get subcort
 info_ji_parc_subcort=info_ji_parc[info_ji_parc.structure != 'cortex']
 
-
-# In[]:
 # try importing CAB-NP surface converted to fsaverage5 resolution using wb_command
 # abagen normally expects fsaverage5 but can handle other meshes if provided with the surface file
 # see "non-standard parcellations" https://abagen.readthedocs.io/en/stable/user_guide/parcellations.html
@@ -78,8 +66,6 @@ atlasCABNPsurfTree = images.check_atlas(atlas=atlasCABNPsurf,atlas_info=info_ji_
 atlasCABNPvol=project+'/CAB-NP/CAB_NP_converted/CAB_NP_vol_separated.nii'
 atlasCABNPvolTree = images.check_atlas(atlas=atlasCABNPvol,atlas_info=info_ji_parc_subcort)
 
-
-# In[]:
 # get expression for CABNP surface (fsaverage5 space)
 # set norm_structures=True to normalize within brain structures (cortex, cerebellum, subcort/brainstem)
 # since vol and surf are computed separately here, normalizing by brain structure is better 
