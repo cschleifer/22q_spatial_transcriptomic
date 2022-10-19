@@ -8,7 +8,7 @@ Analyses relating spatial patterns of gene expression from Allen Human Brain Atl
   * download: https://www.humanconnectome.org/software/get-connectome-workbench
   * script expects the workbench directory to be `/Applications/workbench/bin_macosx64` (either download to this location, or edit the path in the script)
 * to read fMRI results from the hoffman2 server, the script expects that the server `hoffman2.idre.ucla.edu:/u/project/cbearden/data` is mounted to your local machine at the path `~/Desktop/hoffman_mount` using an application such as SSHFS (mac download: https://osxfuse.github.io/)
-  * requires first-level MRI results to be already computed on server, see https://github.com/cschleifer/22q_hoffman
+  * requires first-level MRI results to be already computed on server (see https://github.com/cschleifer/22q_hoffman)
   
 ## Analysis Steps
 1. Generate parcellated BOLD metrics (e.g. RSFA) on hoffman
