@@ -2,6 +2,9 @@
 Analyses relating spatial patterns of gene expression from Allen Human Brain Atlas (AHBA) to fMRI markers of 22q11.2 Deletion Syndrome (22qDel)
 
 ## Overview
+Mouse model research suggests that deficits in specific neuronal cell types may underlie altered brain activity and behavior in humans with 22qDel. Specifically, multiple 22qDel mouse models converge on disruptions to parvalbumin expressing (PV+) inhibitory interneurons. There is also evidence from the 22qDel mouse model for disrupted long-range connectivity of excitatory pyramidal neurons (PN). In humans with 22qDel, PV+ and PN dysfunction may contribute to disrupted brain activity observable with fMRI, but direct invasive confirmation of this hypothesis is not feasible. Spatial transcriptomics provides a non-invasive means to relate human neuroimaging findings to typical patterns of brain gene expression. We can test the hypothesis that fMRI disruptions in 22qDel index regions normally enriched for specific neuronal marker genes (e.g. PVALB for PV+ interneurons). 
+
+We will compute several measures from resting-state fMRI across a set of 718 cortical and subcortical parcels from the [CAB-NP atlas](https://github.com/ColeLab/ColeAnticevicNetPartition) -- specifically global brain connectivity (GBC), local connectivity/regional homogeneity (ReHo), and temporal variability (RSFA). Repository for first-level fMRI analyses can be found [here](https://github.com/cschleifer/22q_hoffman). Scripts in the current repository extract AHBA gene expression data from the same CAB-NP parcels using the [abagen toolbox](https://abagen.readthedocs.io/en/stable/usage.html), read these data along with parcellated fMRI measures, generate brain plots, and test spatial relationships between gene expression and fMRI group differences.  
 
 ## Dependencies
 * requires wb_command for ciftiTools functions that read/plot MRI data. 
