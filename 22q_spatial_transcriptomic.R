@@ -12,13 +12,26 @@
 # clear workspace
 rm(list = ls(all.names = TRUE))
 
+# use SSHFS to mount hoffman2 server (download SSHFS for mac: https://osxfuse.github.io/)
+# TODO: set hoffman2 username
+uname <- "schleife"
+# set local path to mount server
+hoffman <- "~/Desktop/hoffman_mount"
+# create directory if needed 
+if(!file.exists(hoffman)){dir.create(hoffman)}
+# make string to run as system command
+mntcommand <- paste0("sshfs ",uname,"@hoffman2.idre.ucla.edu:/u/project/cbearden/data ",hoffman)
+# if hoffman directory is empty, use system command and sshfs to mount server, if not empty assume already mounted and skip
+if(length(list.files(hoffman)) == 0){system(mntcommand)}else{print(paste(hoffman,"is not empty...skipping SSHFS step"))}
+
 # list packages to load
 packages <- c("conflicted","here","magrittr", "dplyr", "tidyr", "ggplot2", "ciftiTools","tableone")
 
 # install packages if not yet installed
 # note: ciftiTools install fails if R is started without enough memory on cluster (try 16G)
-installed_packages <- packages %in% rownames(installed.packages())
-if (any(installed_packages == FALSE)) {install.packages(packages[!installed_packages])}
+all_packages <- rownames(installed.packages())
+installed_packages <- packages %in% all_packages
+if (any(installed_packages == FALSE)){install.packages(packages[!installed_packages])}
 
 # load packages
 invisible(lapply(packages, library, character.only = TRUE))
@@ -653,11 +666,11 @@ rsfa_bg_ahba <- merge(x=rsfa_bg, y=ahbaCombinedCABNP, by="label")
 # correlate delta with PVALB, SST, and SST/PVALB -- wole brain
 cor_wb_delta_pv <- cor.test(rsfa_bg_ahba$delta, rsfa_bg_ahba$PVALB, na.action="omit")
 cor_wb_delta_st <- cor.test(rsfa_bg_ahba$delta, rsfa_bg_ahba$SST, na.action="omit")
-cor_wb_delta_st_over_pv <- cor.test(rsfa_bg_ahba$delta, rsfa_bg_ahba$SST_PVALB_RATIO, na.action="omit")
+#cor_wb_delta_st_over_pv <- cor.test(rsfa_bg_ahba$delta, rsfa_bg_ahba$SST_PVALB_RATIO, na.action="omit")
 
 # correlate delta with PVALB, SST, and SST/PVALB -- only LH cortex (RH AHBA has more missing parcels)
 rsfa_bg_lh_ahba <- filter(rsfa_bg_ahba, label <= 180)
 cor_lh_delta_pv <- cor.test(rsfa_bg_lh_ahba$delta, rsfa_bg_lh_ahba$PVALB, na.action="omit")
 cor_lh_delta_st <- cor.test(rsfa_bg_lh_ahba$delta, rsfa_bg_lh_ahba$SST, na.action="omit")
-cor_lh_delta_st_over_pv <- cor.test(rsfa_bg_lh_ahba$delta, rsfa_bg_lh_ahba$SST_PVALB_RATIO, na.action="omit")
+#cor_lh_delta_st_over_pv <- cor.test(rsfa_bg_lh_ahba$delta, rsfa_bg_lh_ahba$SST_PVALB_RATIO, na.action="omit")
 
