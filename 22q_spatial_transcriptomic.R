@@ -25,7 +25,7 @@ mntcommand <- paste0("umount -f ", hoffman,"; sshfs ",uname,"@hoffman2.idre.ucla
 if(length(list.files(hoffman)) == 0){system(mntcommand)}else{print(paste(hoffman,"is not empty...skipping SSHFS step"))}
 
 # list packages to load
-packages <- c("conflicted","here","magrittr", "dplyr", "tidyr", "ggplot2", "ciftiTools","tableone")
+packages <- c("conflicted","here","magrittr", "dplyr", "tidyr", "ggplot2", "ciftiTools","tableone", "data.table", "reshape2")
 
 # install packages if not yet installed
 # note: ciftiTools install fails if R is started without enough memory on cluster (try 16G)
@@ -629,6 +629,7 @@ rsfa_hcs <- lapply(use_ids_hcs, function(s) read_csv_results(sesh=s,site="trio",
 
 rsfa_22q_all <- rsfa_22q %>% do.call(rbind,.)
 rsfa_hcs_all <- rsfa_hcs %>% do.call(rbind,.)
+rsfa_all <- rbind(rsfa_22q_all,rsfa_hcs_all)
 
 # function to compute mean and sd for t_sd for each parcel 
 rsfa_means <- function(df){
@@ -647,8 +648,21 @@ rsfa_hcs_means <- rsfa_means(rsfa_hcs_all) %>% as.data.frame
 rsfa_diff <- rsfa_22q_means$mean - rsfa_hcs_means$mean
 rsfa_delta <- rsfa_diff/rsfa_hcs_means$sd
 
-# 
+# cast to wide to merge with demographics
+data.table::setDT(rsfa_all)
+# add prefix "r_" to parcel indices to use as column names in wide df 
+rsfa_all$index_col <- paste0("r_",rsfa_all$INDEX)
+# get list of indices
+parc_cols <- unique(rsfa_all$index_col)
+# make wide df with column form MRI_S_ID and one column per parcel with cells containing t_sd
+rsfa_all_wide <- reshape2::dcast(rsfa_all, MRI_S_ID ~ index_col, value.var="t_sd") 
+# order cols
+rsfa_all_wide <- rsfa_all_wide[,c("MRI_S_ID", parc_cols)]
 
+# merge with demo table 
+df_demo_table_full_mri <- merge(x=df_demo_table_full, y=rsfa_all_wide, by="MRI_S_ID", all.x=T)
+
+# TODO: for every parcel, linear model with covars, get beta for group term
 
 # create dataframe for input to atlas_xifti_new_vals() with label column (roi_col) and RSFA outputs (val_col)
 rsfa_bg <- cbind(1:length(rsfa_diff),rsfa_diff,rsfa_delta) %>% as.data.frame
