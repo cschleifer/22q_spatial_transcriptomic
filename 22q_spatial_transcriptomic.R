@@ -662,7 +662,53 @@ rsfa_all_wide <- rsfa_all_wide[,c("MRI_S_ID", parc_cols)]
 # merge with demo table 
 df_demo_table_full_mri <- merge(x=df_demo_table_full, y=rsfa_all_wide, by="MRI_S_ID", all.x=T)
 
-# TODO: for every parcel, linear model with covars, get beta for group term
+# function to return beta coefficient for group in a lm predicting MRI from group plus covariates
+lm_parcel_group_covars <- function(df,var){
+  lm(reformulate("SUBJECT_IDENTITY + AGE + SEX", response=var),data=df)$coefficients["SUBJECT_IDENTITYPATIENT-DEL"]
+}
+
+# function to apply lm at each parcel
+get_parcel_group_betas <- function(df,parc_cols){
+  lapply(parc_cols, function(v) lm_parcel_group_covars(var=v, df=df)) %>% do.call(rbind,.) %>% as.data.frame
+}
+
+# get group difference effect size for each parcel
+group_betas <- get_parcel_group_betas(df=df_demo_table_full_mri, parc_cols=parc_cols)
+
+# TODO: edit plot code below
+# create dataframe or betas for input to atlas_xifti_new_vals() with label column (roi_col) and RSFA outputs (val_col)
+rsfa_bg <- cbind(1:length(rsfa_diff),rsfa_diff,rsfa_delta) %>% as.data.frame
+colnames(rsfa_bg) <- c("label","diff","delta")
+plot_rsfa_diff <- atlas_xifti_new_vals(xii=xii_Ji_parcel, df=rsfa_bg, roi_col="label", val_col="diff")
+view_xifti_surface(plot_rsfa_diff, title="RSFA diff (22qDel - HCS)", cex.title=1.3, colors="magma")
+
+# function to permute group labels to generate null distribution
+permute_group <- function(df,group_col){
+  # take input df and randomly permute group column
+  dfPerm <- df
+  dfPerm[,group_col] <- sample(dfPerm[,group_col])
+  return(dfPerm)
+}
+
+# get 5000 permutations of the linear model output for each parcel
+nPerm <- 5000
+get_parcel_group_betas_v <- function(i){
+  print(paste0("perm:",i,"/",nPerm))
+  get_parcel_group_betas(df=permute_group(df=df_demo_table_full_mri,group_col="SUBJECT_IDENTITY"), parc_cols=parc_cols)
+}
+perm_betas <- lapply(1:nPerm, get_parcel_group_betas_v)
+
+# transform list to dataframe with one row per parcel and nperm columns
+perm_beta_df <- lapply(1:length(parc_cols), function(p) lapply(1:nPerm, function(n) perm_betas[[n]][p,]) %>% do.call(cbind,.)) %>% do.call(rbind,.) %>% as.data.frame
+
+# for each parcel, get the percentage of permuted trials that have an effect size with an absolute value greater than the absolute value for the real data
+group_perm_prob <- lapply(1:length(parc_cols), function(p) sum(abs(as.numeric(perm_beta_df[p,])) > abs(as.numeric(group_betas[p,])))/nPerm) %>% do.call(rbind,.) %>% as.data.frame
+
+
+
+
+
+
 
 # create dataframe for input to atlas_xifti_new_vals() with label column (roi_col) and RSFA outputs (val_col)
 rsfa_bg <- cbind(1:length(rsfa_diff),rsfa_diff,rsfa_delta) %>% as.data.frame
