@@ -570,7 +570,7 @@ demo_table_sips <- lapply(1:nrow(df_demo_table_full), function(r) get_sips(r=r, 
 # merge sips with demo table
 df_demo_table_full <- merge(x=df_demo_table_full, y=demo_table_sips[,c("SUBJECTID","CONVERTEDVISITNUM","SIPS_total","SIPS_psspectrum_3")], by=c("SUBJECTID","CONVERTEDVISITNUM"), all.x=T) %>% rename("SIPS_prodromal" = "SIPS_psspectrum_3")
 
-# set sips_total to numeric and sips_prodromal to factor
+# set sips_total to numeric and sips_prodromal to logical
 df_demo_table_full %<>% mutate_at(vars("SIPS_prodromal"), ~as.logical(.))
 df_demo_table_full %<>% mutate_at(vars("SIPS_total"), ~as.numeric(.))
 
@@ -631,56 +631,83 @@ rsfa_22q_all <- rsfa_22q %>% do.call(rbind,.)
 rsfa_hcs_all <- rsfa_hcs %>% do.call(rbind,.)
 rsfa_all <- rbind(rsfa_22q_all,rsfa_hcs_all)
 
-# function to compute mean and sd for t_sd for each parcel 
-rsfa_means <- function(df){
-  tsds <- lapply(unique(df$INDEX), function(i) filter(df, INDEX == i)$t_sd)
-  m <- lapply(tsds, mean) %>% do.call(rbind,.)
-  s <- lapply(tsds, sd) %>% do.call(rbind,.)
-  out <- cbind(m,s)
-  colnames(out) <- c("mean","sd")
+# set of functions to compute mean and sd for t_sd for each parcel 
+# first get mean and standard dev of hcs for a given parcel
+get_parc_hc_mean_sd <- function(df, hcs_ids, parc){
+  dff <- filter(df, MRI_S_ID %in% hcs_ids & INDEX == parc)
+  out <- data.frame(mean=mean(as.numeric(dff$t_sd)), sd=sd(as.numeric(dff$t_sd)))
   return(out)
 }
+# function to normalize a row of rsfa_all based on hcs mean and sd
+norm_row <- function(df, r, hc_parc_stats){
+  parc=df[r,"INDEX"]
+  hc <- hc_parc_stats[[parc]]
+  df[r,"t_sd_normed"] <- (as.numeric(df[r,"t_sd"]) - hc$mean)/hc$sd
+  return(df[r,])
+}
+# first get hc stats per parcel
+parc_hc_stats <- lapply(unique(rsfa_all$INDEX), function(p) get_parc_hc_mean_sd(parc=p, df=rsfa_all, hcs_ids=use_ids_hcs))
 
-rsfa_22q_means <- rsfa_means(rsfa_22q_all) %>% as.data.frame
-rsfa_hcs_means <- rsfa_means(rsfa_hcs_all) %>% as.data.frame
+# norm all
+rsfa_normed <- lapply(1:nrow(rsfa_all), function(r) norm_row(r=r,df=rsfa_all, hc_parc_stats=parc_hc_stats)) %>% do.call(rbind,.) %>% as.data.frame
+
+# function to get parcel means
+#rsfa_means <- function(df){
+#  tsds <- lapply(unique(df$INDEX), function(i) filter(df, INDEX == i)$t_sd)
+#  m <- lapply(tsds, mean) %>% do.call(rbind,.)
+#  s <- lapply(tsds, sd) %>% do.call(rbind,.)
+#  out <- cbind(m,s)
+#  colnames(out) <- c("mean","sd")
+#  return(out)
+#}
+
+#rsfa_22q_means <- rsfa_means(rsfa_22q_all) %>% as.data.frame
+#rsfa_hcs_means <- rsfa_means(rsfa_hcs_all) %>% as.data.frame
 
 # deviance score per region = (22q mean - HC mean) / HC standard dev
-rsfa_diff <- rsfa_22q_means$mean - rsfa_hcs_means$mean
-rsfa_delta <- rsfa_diff/rsfa_hcs_means$sd
+#rsfa_diff <- rsfa_22q_means$mean - rsfa_hcs_means$mean
+#rsfa_delta <- rsfa_diff/rsfa_hcs_means$sd
+
 
 # cast to wide to merge with demographics
-data.table::setDT(rsfa_all)
+data.table::setDT(rsfa_normed)
 # add prefix "r_" to parcel indices to use as column names in wide df 
-rsfa_all$index_col <- paste0("r_",rsfa_all$INDEX)
+rsfa_normed$index_col <- paste0("r_",rsfa_normed$INDEX)
 # get list of indices
-parc_cols <- unique(rsfa_all$index_col)
-# make wide df with column form MRI_S_ID and one column per parcel with cells containing t_sd
-rsfa_all_wide <- reshape2::dcast(rsfa_all, MRI_S_ID ~ index_col, value.var="t_sd") 
+parc_cols <- unique(rsfa_normed$index_col)
+# make wide df with column form MRI_S_ID and one column per parcel with cells containing t_sd_normed
+rsfa_normed_wide <- reshape2::dcast(rsfa_normed, MRI_S_ID ~ index_col, value.var="t_sd_normed") 
 # order cols
-rsfa_all_wide <- rsfa_all_wide[,c("MRI_S_ID", parc_cols)]
+rsfa_normed_wide <- rsfa_normed_wide[,c("MRI_S_ID", parc_cols)]
 
 # merge with demo table 
-df_demo_table_full_mri <- merge(x=df_demo_table_full, y=rsfa_all_wide, by="MRI_S_ID", all.x=T)
+df_demo_table_full_mri <- merge(x=df_demo_table_full, y=rsfa_normed_wide, by="MRI_S_ID", all.x=T)
 
 # function to return beta coefficient for group in a lm predicting MRI from group plus covariates
+#lm_parcel_group_covars <- function(df,var){
+#  lm(reformulate("SUBJECT_IDENTITY + AGE + SEX", response=var),data=df)$coefficients["SUBJECT_IDENTITYPATIENT-DEL"]
+#}
 lm_parcel_group_covars <- function(df,var){
-  lm(reformulate("SUBJECT_IDENTITY + AGE + SEX", response=var),data=df)$coefficients["SUBJECT_IDENTITYPATIENT-DEL"]
+  lm(reformulate("SUBJECT_IDENTITY + AGE + SEX", response=var),data=df)
 }
 
 # function to apply lm at each parcel
-get_parcel_group_betas <- function(df,parc_cols){
-  lapply(parc_cols, function(v) lm_parcel_group_covars(var=v, df=df)) %>% do.call(rbind,.) %>% as.data.frame
+get_parcel_group_lm <- function(df,parc_cols){
+  lapply(parc_cols, function(v) lm_parcel_group_covars(var=v, df=df)) 
 }
 
-# get group difference effect size for each parcel
-group_betas <- get_parcel_group_betas(df=df_demo_table_full_mri, parc_cols=parc_cols)
+# get group difference effect size for normalized t_sd in each parcel
+rsfa_group_lm <- get_parcel_group_lm(df=df_demo_table_full_mri, parc_cols=parc_cols)
+rsfa_group_betas <- lapply(rsfa_group_lm, function(p) p$coefficients["SUBJECT_IDENTITYPATIENT-DEL"]) %>% do.call(rbind,.) %>% as.data.frame
+
+
 
 # TODO: edit plot code below
 # create dataframe or betas for input to atlas_xifti_new_vals() with label column (roi_col) and RSFA outputs (val_col)
-rsfa_bg <- cbind(1:length(rsfa_diff),rsfa_diff,rsfa_delta) %>% as.data.frame
-colnames(rsfa_bg) <- c("label","diff","delta")
-plot_rsfa_diff <- atlas_xifti_new_vals(xii=xii_Ji_parcel, df=rsfa_bg, roi_col="label", val_col="diff")
-view_xifti_surface(plot_rsfa_diff, title="RSFA diff (22qDel - HCS)", cex.title=1.3, colors="magma")
+#rsfa_bg <- cbind(1:length(rsfa_diff),rsfa_diff,rsfa_delta) %>% as.data.frame
+#colnames(rsfa_bg) <- c("label","diff","delta")
+#plot_rsfa_diff <- atlas_xifti_new_vals(xii=xii_Ji_parcel, df=rsfa_bg, roi_col="label", val_col="diff")
+#view_xifti_surface(plot_rsfa_diff, title="RSFA diff (22qDel - HCS)", cex.title=1.3, colors="magma")
 
 # function to permute group labels to generate null distribution
 permute_group <- function(df,group_col){
@@ -691,20 +718,21 @@ permute_group <- function(df,group_col){
 }
 
 # get 5000 permutations of the linear model output for each parcel
-nPerm <- 5000
-get_parcel_group_betas_v <- function(i){
+nPerm <- 3000
+get_parcel_group_lm_v <- function(i){
   print(paste0("perm:",i,"/",nPerm))
-  get_parcel_group_betas(df=permute_group(df=df_demo_table_full_mri,group_col="SUBJECT_IDENTITY"), parc_cols=parc_cols)
+  get_parcel_group_lm(df=permute_group(df=df_demo_table_full_mri,group_col="SUBJECT_IDENTITY"), parc_cols=parc_cols)
 }
-perm_betas <- lapply(1:nPerm, get_parcel_group_betas_v)
+
+perm_lms<- lapply(1:nPerm, get_parcel_group_lm_v)
+
+# TODO: get betas from list of permed lms
 
 # transform list to dataframe with one row per parcel and nperm columns
 perm_beta_df <- lapply(1:length(parc_cols), function(p) lapply(1:nPerm, function(n) perm_betas[[n]][p,]) %>% do.call(cbind,.)) %>% do.call(rbind,.) %>% as.data.frame
 
 # for each parcel, get the percentage of permuted trials that have an effect size with an absolute value greater than the absolute value for the real data
-group_perm_prob <- lapply(1:length(parc_cols), function(p) sum(abs(as.numeric(perm_beta_df[p,])) > abs(as.numeric(group_betas[p,])))/nPerm) %>% do.call(rbind,.) %>% as.data.frame
-
-
+group_perm_prob <- lapply(1:length(parc_cols), function(p) sum(abs(as.numeric(perm_beta_df[p,])) > abs(as.numeric(rsfa_group_betas[p,])))/nPerm) %>% do.call(rbind,.) %>% as.data.frame
 
 
 
