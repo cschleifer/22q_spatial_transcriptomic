@@ -25,7 +25,7 @@ mntcommand <- paste0("umount -f ", hoffman,"; sshfs ",uname,"@hoffman2.idre.ucla
 if(length(list.files(hoffman)) == 0){system(mntcommand)}else{print(paste(hoffman,"is not empty...skipping SSHFS step"))}
 
 # list packages to load
-packages <- c("conflicted","here","magrittr", "dplyr", "tidyr", "ggplot2", "ciftiTools","tableone", "data.table", "reshape2")
+packages <- c("conflicted","here","magrittr", "dplyr", "tidyr", "ggplot2","RColorBrewer", "ciftiTools","tableone", "data.table", "reshape2")
 
 # install packages if not yet installed
 # note: ciftiTools install fails if R is started without enough memory on cluster (try 16G)
@@ -130,8 +130,8 @@ atlas_xifti_new_vals <- function(xii, df, roi_col, val_col){
 }
 
 # get SST/PVALB and PVALB/SST ratios
-ahbaSurfCABNP$SST_PVALB_RATIO <- ahbaSurfCABNP$SST/ahbaSurfCABNP$PVALB
-ahbaSurfCABNP$PVALB_SST_RATIO <- ahbaSurfCABNP$PVALB/ahbaSurfCABNP$SST
+#ahbaSurfCABNP$SST_PVALB_RATIO <- ahbaSurfCABNP$SST/ahbaSurfCABNP$PVALB
+#ahbaSurfCABNP$PVALB_SST_RATIO <- ahbaSurfCABNP$PVALB/ahbaSurfCABNP$SST
 
 # plot surface label values to check that atlas was read and written correctly (should match input atlas)
 #plot_label <- atlas_xifti_new_vals(xii=xii_Ji_parcel_surf, df=ahbaSurfCABNP, roi_col="label", val_col="label2")
@@ -147,10 +147,10 @@ plot_sst <- atlas_xifti_new_vals(xii=xii_Ji_parcel_surf, df=ahbaSurfCABNP, roi_c
 #view_xifti_surface(plot_sst, hemisphere="left", title="SST", cex.title=1.3, colors="magma")
 
 # plot SST/PVALB ratio
-plot_sst_pvalb_ratio <- atlas_xifti_new_vals(xii=xii_Ji_parcel_surf, df=ahbaSurfCABNP, roi_col="label", val_col="SST_PVALB_RATIO")
+#plot_sst_pvalb_ratio <- atlas_xifti_new_vals(xii=xii_Ji_parcel_surf, df=ahbaSurfCABNP, roi_col="label", val_col="SST_PVALB_RATIO")
 #view_xifti_surface(plot_sst_pvalb_ratio,  hemisphere="left", title="SST/PVALB", cex.title=1.3, colors="magma")
 
-plot_pvalb_sst_ratio <- atlas_xifti_new_vals(xii=xii_Ji_parcel_surf, df=ahbaSurfCABNP, roi_col="label", val_col="PVALB_SST_RATIO")
+#plot_pvalb_sst_ratio <- atlas_xifti_new_vals(xii=xii_Ji_parcel_surf, df=ahbaSurfCABNP, roi_col="label", val_col="PVALB_SST_RATIO")
 #view_xifti_surface(plot_pvalb_sst_ratio,  hemisphere="left", title="PVALB/SST", cex.title=1.3, colors="magma")
 
 # combine volume and surface df and plot together
@@ -621,9 +621,10 @@ read_csv_results <- function(sdir, fname, sesh, site){
 
 # file name to look for
 # TODO: final version is resting_parcel_RSFA_Atlas_s_hpss_res-mVWMWB1d_lpss_whole_brain_CABNP.csv
-rsfa_name <- "parcel_RSFA_Atlas_s_hpss_res-mVWMWB1d_lpss_whole_brain_CABNP.csv"
+#rsfa_name <- "parcel_RSFA_Atlas_s_hpss_res-mVWMWB1d_lpss_whole_brain_CABNP.csv"
+rsfa_name <- "resting_parcel_RSFA_Atlas_s_hpss_res-mVWMWB1d_lpss_whole_brain_CABNP.csv"
 
-# read for trio and prisma then combine
+# read rsfa
 rsfa_22q <- lapply(use_ids_22q, function(s) read_csv_results(sesh=s,site="trio",sdir=file.path(hoffman,"22q/qunex_studyfolder/sessions"),fname=rsfa_name)) 
 rsfa_hcs <- lapply(use_ids_hcs, function(s) read_csv_results(sesh=s,site="trio",sdir=file.path(hoffman,"22q/qunex_studyfolder/sessions"),fname=rsfa_name)) 
 
@@ -642,7 +643,7 @@ get_parc_hc_mean_sd <- function(df, hcs_ids, parc){
 norm_row <- function(df, r, hc_parc_stats){
   parc=df[r,"INDEX"]
   hc <- hc_parc_stats[[parc]]
-  df[r,"t_sd_normed"] <- (as.numeric(df[r,"t_sd"]) - hc$mean)/hc$sd
+  df[r,"t_sd_normed"] <- (as.numeric(df[r,"t_sd"]) - as.numeric(hc$mean))/as.numeric(hc$sd)
   return(df[r,])
 }
 # first get hc stats per parcel
@@ -684,12 +685,13 @@ rsfa_normed_wide <- rsfa_normed_wide[,c("MRI_S_ID", parc_cols)]
 df_demo_table_full_mri <- merge(x=df_demo_table_full, y=rsfa_normed_wide, by="MRI_S_ID", all.x=T)
 
 # function to return beta coefficient for group in a lm predicting MRI from group plus covariates
-#lm_parcel_group_covars <- function(df,var){
-#  lm(reformulate("SUBJECT_IDENTITY + AGE + SEX", response=var),data=df)$coefficients["SUBJECT_IDENTITYPATIENT-DEL"]
-#}
 lm_parcel_group_covars <- function(df,var){
-  lm(reformulate("SUBJECT_IDENTITY + AGE + SEX", response=var),data=df)
+  lm(reformulate("SUBJECT_IDENTITY + AGE + SEX", response=var),data=df)$coefficients["SUBJECT_IDENTITYPATIENT-DEL"]
 }
+
+#lm_parcel_group_covars <- function(df,var){
+#  lm(reformulate("SUBJECT_IDENTITY + AGE + SEX", response=var),data=df)
+#}
 
 # function to apply lm at each parcel
 get_parcel_group_lm <- function(df,parc_cols){
@@ -697,9 +699,9 @@ get_parcel_group_lm <- function(df,parc_cols){
 }
 
 # get group difference effect size for normalized t_sd in each parcel
-rsfa_group_lm <- get_parcel_group_lm(df=df_demo_table_full_mri, parc_cols=parc_cols)
-rsfa_group_betas <- lapply(rsfa_group_lm, function(p) p$coefficients["SUBJECT_IDENTITYPATIENT-DEL"]) %>% do.call(rbind,.) %>% as.data.frame
-
+rsfa_group_betas <- get_parcel_group_lm(df=df_demo_table_full_mri, parc_cols=parc_cols)%>% do.call(rbind,.) %>% as.data.frame
+#rsfa_group_lm <- get_parcel_group_lm(df=df_demo_table_full_mri, parc_cols=parc_cols)
+#rsfa_group_betas <- lapply(rsfa_group_lm, function(p) p$coefficients["SUBJECT_IDENTITYPATIENT-DEL"]) %>% do.call(rbind,.) %>% as.data.frame
 
 
 # TODO: edit plot code below
@@ -718,33 +720,70 @@ permute_group <- function(df,group_col){
 }
 
 # get 5000 permutations of the linear model output for each parcel
-nPerm <- 3000
+nPerm <- 5000
 get_parcel_group_lm_v <- function(i){
   print(paste0("perm:",i,"/",nPerm))
   get_parcel_group_lm(df=permute_group(df=df_demo_table_full_mri,group_col="SUBJECT_IDENTITY"), parc_cols=parc_cols)
 }
 
-perm_lms<- lapply(1:nPerm, get_parcel_group_lm_v)
-
-# TODO: get betas from list of permed lms
+perm_betas<- lapply(1:nPerm, get_parcel_group_lm_v)
 
 # transform list to dataframe with one row per parcel and nperm columns
-perm_beta_df <- lapply(1:length(parc_cols), function(p) lapply(1:nPerm, function(n) perm_betas[[n]][p,]) %>% do.call(cbind,.)) %>% do.call(rbind,.) %>% as.data.frame
+perm_beta_df <- lapply(1:length(parc_cols), function(p) lapply(1:nPerm, function(n) as.numeric(perm_betas[[n]][p])) %>% do.call(cbind,.)) %>% do.call(rbind,.) %>% as.data.frame 
 
 # for each parcel, get the percentage of permuted trials that have an effect size with an absolute value greater than the absolute value for the real data
 group_perm_prob <- lapply(1:length(parc_cols), function(p) sum(abs(as.numeric(perm_beta_df[p,])) > abs(as.numeric(rsfa_group_betas[p,])))/nPerm) %>% do.call(rbind,.) %>% as.data.frame
 
-
-
+# add p-values and q-values to cab-np parcel key
+ji_key$rsfa_diff_permp <- group_perm_prob$V1
+ji_key$rsfa_diff_permp_fdr <- p.adjust(ji_key$rsfa_diff_permp, method="fdr")
+# add group difference betas (negative number means patients < controls)
+ji_key$rsfa_diff_beta <- rsfa_group_betas[,"SUBJECT_IDENTITYPATIENT-DEL"]
+# create column of betas with non-fdr-significant set to NA
+ji_key$rsfa_diff_beta_fdrsig <- ji_key$rsfa_diff_beta
+ji_key$rsfa_diff_beta_fdrsig[which(ji_key$rsfa_diff_permp_fdr > 0.05)] <- NA
 
 
 # create dataframe for input to atlas_xifti_new_vals() with label column (roi_col) and RSFA outputs (val_col)
-rsfa_bg <- cbind(1:length(rsfa_diff),rsfa_diff,rsfa_delta) %>% as.data.frame
-colnames(rsfa_bg) <- c("label","diff","delta")
+#rsfa_bg <- cbind(1:length(rsfa_diff),rsfa_diff,rsfa_delta) %>% as.data.frame
+#colnames(rsfa_bg) <- c("label","diff","delta")
+
+# color pals for brain plots
+# set up rcolorbrewer palettes
+pal_red_yellow_blue <- function(){
+  pal <- "RdYlBu"
+  ncolors <- 1000
+  mycolors <- rev(colorRampPalette(brewer.pal(11,pal))(ncolors))
+  return(mycolors)
+}
+
+pal_red_blue <- function(){
+  pal <- "RdBu"
+  ncolors <- 1000
+  mycolors <- rev(colorRampPalette(brewer.pal(11,pal))(ncolors))
+  return(mycolors)
+}
+
+pal_yellow_orange_red <- function(){
+  pal <- "YlOrRd"
+  ncolors <- 1000
+  mycolors <- colorRampPalette(brewer.pal(9,pal))(ncolors)
+  return(mycolors)
+}
 
 # brain plots
-plot_rsfa_diff <- atlas_xifti_new_vals(xii=xii_Ji_parcel, df=rsfa_bg, roi_col="label", val_col="diff")
-view_xifti_surface(plot_rsfa_diff, title="RSFA diff (22qDel - HCS)", cex.title=1.3, colors="magma")
+# group difference beta no threshold
+plot_rsfa_diff_beta <- atlas_xifti_new_vals(xii=xii_Ji_parcel, df=ji_key, roi_col="INDEX", val_col="rsfa_diff_beta")
+view_xifti_surface(plot_rsfa_diff_beta, title="RSFA diff beta (22qDel - HCS)", cex.title=1.3,zlim=c(-0.8,0.8),colors=pal_red_blue())
+view_xifti_volume(plot_rsfa_diff_beta, title="RSFA diff beta (22qDel - HCS)", cex.title=1.3,zlim=c(-0.8,0.8),colors=pal_red_blue())
+
+
+# group difference beta only fdr<0.05
+plot_rsfa_diff_beta_fdr <- atlas_xifti_new_vals(xii=xii_Ji_parcel, df=ji_key, roi_col="INDEX", val_col="rsfa_diff_beta_fdrsig")
+view_xifti_surface(plot_rsfa_diff_beta_fdr, title="RSFA diff beta FDR corrected (22qDel - HCS)", cex.title=1.3,zlim=c(-0.8,0.8), colors=pal_red_blue())
+view_xifti_volume(plot_rsfa_diff_beta_fdr, title="RSFA diff beta FDR corrected (22qDel - HCS)", cex.title=1.3,zlim=c(-0.8,0.8), colors=pal_red_blue())
+
+
 
 plot_rsfa_delta <- atlas_xifti_new_vals(xii=xii_Ji_parcel, df=rsfa_bg, roi_col="label", val_col="delta")
 view_xifti_surface(plot_rsfa_delta, title="RSFA delta (22qDel - HCS)", cex.title=1.3, colors="magma")
